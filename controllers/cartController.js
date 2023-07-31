@@ -55,18 +55,16 @@ exports.removeFromFavorites = catchAsync(async (req, res, next) => {
 
   // 2) Check if the favorite recipe exists in user's favorites
   const existingFavorite = await Cart.findOne({
-    recipe: cartID,
+    _id: cartID,
     user: userId
   });
   if (!existingFavorite) {
-    return next(
-      new AppError('This Item does not exist in your favorites', 400)
-    );
+    return next(new AppError('This Item does not exist in your cart', 400));
   }
 
   // 3) Remove the recipe from user's favorites
   await Cart.findOneAndDelete({
-    recipe: cartID,
+    _id: cartID,
     user: userId
   });
 
@@ -79,12 +77,12 @@ exports.removeFromFavorites = catchAsync(async (req, res, next) => {
 exports.getUserFavorites = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
-  const favoriteRecipes = await Cart.find({ user: userId }).populate('recipe');
+  const userCart = await Cart.find({ user: userId });
 
   res.status(200).json({
     status: 'success',
     data: {
-      favorites: favoriteRecipes.map(favorite => favorite.recipe)
+      carts: userCart.map(favorite => favorite)
     }
   });
 });
