@@ -76,18 +76,20 @@ exports.getUserAddresses = catchAsync(async (req, res, next) => {
   });
 });
 
+// Function to delete an address
 exports.deleteAddress = catchAsync(async (req, res, next) => {
-  const addressId = req.params.id;
+  const { addressId } = req.body;
   const userId = req.user._id;
 
-  // Find the address in the database
-  const address = await Address.findOne({ _id: addressId, user: userId });
-  if (!address) {
+  // Find the address in the database and delete it
+  const deletedAddress = await Address.findOneAndDelete({
+    _id: addressId,
+    user: userId
+  });
+
+  if (!deletedAddress) {
     return next(new AppError('Address not found or unauthorized', 404));
   }
-
-  // Delete the address
-  await address.remove();
 
   res.status(204).json({
     status: 'success',
