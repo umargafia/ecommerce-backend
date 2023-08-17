@@ -23,6 +23,10 @@ router.post('/createAddress', userActionsController.addAddress);
 router.patch('/updateAddress', userActionsController.updateAddress);
 router.delete('/deleteAddress', userActionsController.deleteAddress);
 
+router.post('/cards/', userActionsController.createCard);
+router.get('/cards/', userActionsController.getCard);
+router.delete('/cards/:id', userActionsController.deleteCard);
+
 router.use(authController.restrictTo('admin'));
 
 router

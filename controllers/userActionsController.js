@@ -1,45 +1,13 @@
 const Address = require('../models/addressModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const Card = require('../models/CardModel');
 
 // Function to add a new address for a user
 exports.addAddress = catchAsync(async (req, res, next) => {
-  const { country, state, localGov, zipCode, street } = req.body;
-  const userId = req.user._id;
-
-  if (!country) {
-    return next(new AppError('country cannot be empty', 400));
-  }
-  if (!state) {
-    return next(new AppError('state cannot be empty', 400));
-  }
-  if (!localGov) {
-    return next(new AppError('local government cannot be empty', 400));
-  }
-  if (!zipCode) {
-    return next(new AppError('zip code cannot be empty', 400));
-  }
-
-  if (!street) {
-    return next(new AppError('street cannot be empty', 400));
-  }
-
-  // Create a new address document
-  const newAddress = new Address({
-    user: userId,
-    country: country,
-    state: state,
-    localGov: localGov,
-    zipCode: zipCode,
-    street: street
-  });
-
-  // Save the new address to the database
-  await newAddress.save();
-
   res.status(201).json({
     status: 'success',
-    data: newAddress
+    data: 'This route is no longer in use pls use update address route'
   });
 });
 
@@ -48,15 +16,26 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
   const userId = req.user._id;
   const { addressId, country, state, localGov, zipCode, street } = req.body;
 
-  // Find the address in the database
-  const address = await Address.findOneAndUpdate(
-    { _id: addressId, user: userId },
-    { country, state, localGov, zipCode, street },
-    { new: true, runValidators: true }
-  );
+  // Check if the address exists in the database
+  let address = await Address.findOne({ user: userId });
 
   if (!address) {
-    return next(new AppError('Address not found', 404));
+    // Create a new address if it doesn't exist
+    address = await Address.create({
+      user: userId,
+      country,
+      state,
+      localGov,
+      zipCode,
+      street
+    });
+  } else {
+    // Update the existing address
+    address = await Address.findOneAndUpdate(
+      { _id: address._id, user: userId },
+      { country, state, localGov, zipCode, street },
+      { new: true, runValidators: true }
+    );
   }
 
   res.status(200).json({
@@ -95,4 +74,106 @@ exports.deleteAddress = catchAsync(async (req, res, next) => {
     status: 'success',
     data: null
   });
+});
+
+exports.createCard = catchAsync(async (req, res, next) => {
+  //get user and body
+  const user = req.user;
+  const { cardHolder, cardNumber, cvv, expiration } = req.body;
+
+  //verify if the body is valid
+  if (!cardHolder || !cardNumber || !cvv || !expiration) {
+    return next(new AppError('Please provide all the required fields', 400));
+  }
+
+  // check if user have a card
+  const card = await Card.findOne({ user });
+
+  //if user have a card update the card
+  if (card) {
+    card.cardHolder = cardHolder;
+    card.cardNumber = cardNumber;
+    card.cvv = cvv;
+
+    // save the card
+    await card.save();
+
+    // return the card
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        id: card._id,
+        user: card.user,
+        cardHolder: card.cardHolder,
+        cardNumber: card.cardNumber,
+        expiration: card.expiration,
+        cvv: card.cvv
+      }
+    });
+  }
+
+  // if user dosn't have a card create a new card
+  if (!card) {
+    // save the card
+    const newCard = await Card.create({
+      user,
+      cardHolder,
+      cardNumber,
+      cvv,
+      expiration
+    });
+
+    // return the card
+    return res.status(201).json({
+      status: 'success',
+      data: {
+        id: newCard._id,
+        user: newCard.user._id,
+        cardHolder: newCard.cardHolder,
+        cardNumber: newCard.cardNumber,
+        expiration: newCard.expiration,
+        cvv: newCard.cvv
+      }
+    });
+  }
+});
+
+exports.getCard = catchAsync(async (req, res, next) => {
+  // get the user
+  const user = req.user;
+  //check if the user have a card
+  const card = await Card.findOne({ user });
+
+  // if user have a card return the card
+  if (card) {
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        id: card._id,
+        user: card.user,
+        cardHolder: card.cardHolder,
+        cardNumber: card.cardNumber,
+        expiration: card.expiration,
+        cvv: card.cvv
+      }
+    });
+  }
+
+  // if user dosn't have a card return an empty body
+  return res.status(200).json({
+    status: 'success',
+    message: 'user does not have a card'
+  });
+});
+
+exports.deleteCard = catchAsync(async (req, res, next) => {
+  //get the card id
+  const cardId = req.params.id;
+  // check if the card exists and delete it
+  const card = await Card.findByIdAndDelete({ _id: cardId });
+  // if the card does not exists  return an error
+  if (!card) {
+    return next(new AppError('Card not found', 404));
+  }
+  res.status(200).json({ message: 'Card deleted successfully' });
 });
