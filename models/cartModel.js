@@ -17,6 +17,10 @@ const cartSchema = new mongoose.Schema({
   totalPrice: {
     type: String,
     required: true
+  },
+  paid: {
+    type: Boolean,
+    default: false
   }
 });
 
