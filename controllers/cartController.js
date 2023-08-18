@@ -77,7 +77,7 @@ exports.removeFromFavorites = catchAsync(async (req, res, next) => {
 exports.getUserFavorites = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
-  const userCart = await Cart.find({ user: userId });
+  const userCart = await Cart.find({ user: userId, paid: false });
 
   res.status(200).json({
     status: 'success',
