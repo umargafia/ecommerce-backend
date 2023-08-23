@@ -26,7 +26,8 @@ exports.addToCart = catchAsync(async (req, res, next) => {
       product: product.id,
       quantity: quantity,
       totalPrice: totalPrice,
-      now: true
+      now: true,
+      paid: true
     });
     await newCart.save();
 
