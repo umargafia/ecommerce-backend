@@ -4,7 +4,7 @@ const AppError = require('../utils/appError');
 
 exports.addToCart = catchAsync(async (req, res, next) => {
   // get the items and user
-  const { quantity, product, totalPrice } = req.body;
+  const { quantity, product, totalPrice, now } = req.body;
   const userId = req.user._id;
 
   if (!quantity) {
@@ -17,6 +17,23 @@ exports.addToCart = catchAsync(async (req, res, next) => {
 
   if (!totalPrice) {
     return next(new AppError('Total price cannot be empty', 400));
+  }
+
+  // check if the product is buy now
+  if (now === true) {
+    const newCart = new Cart({
+      user: userId,
+      product: product.id,
+      quantity: quantity,
+      totalPrice: totalPrice,
+      now: true
+    });
+    await newCart.save();
+
+    return res.status(201).json({
+      status: 'success',
+      data: newCart
+    });
   }
 
   // Check if the product is already in the user's cart
@@ -37,7 +54,8 @@ exports.addToCart = catchAsync(async (req, res, next) => {
       user: userId,
       product: product.id,
       quantity: quantity,
-      totalPrice: totalPrice
+      totalPrice: totalPrice,
+      now: false
     });
     await newCartItem.save();
     return res.json(newCartItem);

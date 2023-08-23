@@ -21,6 +21,10 @@ const cartSchema = new mongoose.Schema({
   paid: {
     type: Boolean,
     default: false
+  },
+  now: {
+    type: Boolean,
+    default: false
   }
 });
 
