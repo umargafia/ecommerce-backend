@@ -69,8 +69,6 @@ exports.getOrders = catchAsync(async (req, res, next) => {
   // Return the orders
   res.status(200).json({
     status: 'success',
-    data: {
-      carts
-    }
+    data: carts
   });
 });
