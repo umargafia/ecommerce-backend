@@ -71,9 +71,9 @@ exports.signup = catchAsync(async (req, res, next) => {
   }
   if (!password) {
     return next(new AppError('Password is required', 400));
-  } else if (password.length < 8) {
+  } else if (password.length < 6) {
     return next(
-      new AppError('Password must be at least 8 characters long', 400)
+      new AppError('Password must be at least 6 characters long', 400)
     );
   }
   if (!passwordConfirm) {

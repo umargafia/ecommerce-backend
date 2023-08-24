@@ -40,7 +40,8 @@ exports.addToCart = catchAsync(async (req, res, next) => {
   // Check if the product is already in the user's cart
   const existingCartItem = await Cart.findOne({
     user: userId,
-    product: product.id
+    product: product.id,
+    paid: false
   });
 
   if (existingCartItem) {
