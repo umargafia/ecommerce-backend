@@ -45,18 +45,32 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 });
 
 exports.getOrders = catchAsync(async (req, res, next) => {
-  //get the user
-  const user = req.user;
+  // Get the user ID from the authenticated request
+  const userId = req.user._id;
 
-  // get the user orders with status paid to true
-  const orders = await Order.find({ userId: user });
+  // Find user orders with status 'paid'
+  const orders = await Order.find({ userId });
 
-  //map the orders into one array
-  const ordersArray = orders.map(order => order.toObject());
+  // Fetch cart details for each order in parallel using Promise.all
+  const carts = await Promise.all(
+    orders.map(async order => {
+      const cart = await Cart.findById(order.cartId);
+      return {
+        _id: order._id,
+        userId: order.userId,
+        cartId: cart,
+        status: 'pending',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+    })
+  );
 
-  //return the orders
+  // Return the orders
   res.status(200).json({
     status: 'success',
-    data: ordersArray
+    data: {
+      carts
+    }
   });
 });
