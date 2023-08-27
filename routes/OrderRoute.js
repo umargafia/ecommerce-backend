@@ -14,5 +14,6 @@ router.get('/getOrders', orderController.getOrders);
 router.use(authController.restrictTo('admin'));
 
 router.get('/getAllOrders', orderController.getAllOrders);
+router.patch('/updateOrder/:id/:status', orderController.updateOrder);
 
 module.exports = router;

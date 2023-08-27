@@ -83,13 +83,15 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
     orders.map(async order => {
       const cart = await Cart.findById(order.cartId);
       const user = await User.findById(order.userId);
+      const address = await Address.findOne({ user: user._id });
       return {
         _id: order._id,
-        user: user,
-        cart: cart,
-        status: 'pending',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
+        user,
+        cart,
+        address,
+        status: order.status,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt
       };
     })
   );
@@ -98,5 +100,41 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: allOrders
+  });
+});
+
+exports.updateOrder = catchAsync(async (req, res, next) => {
+  const { id, status } = req.params;
+
+  const order = await Order.findById(id);
+
+  if (!order) {
+    return next(new AppError('Order not found', 404));
+  }
+
+  console.log(status);
+
+  if (
+    status !== 'delivered' &&
+    status !== 'shipped' &&
+    status !== 'processing' &&
+    status !== 'pending'
+  ) {
+    return next(new AppError('Invalid order status', 400));
+  }
+
+  const newOrder = await Order.findByIdAndUpdate(
+    id,
+    {
+      status: status
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  res.status(200).json({
+    status: 'success',
+    data: newOrder
   });
 });
