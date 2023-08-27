@@ -4,6 +4,7 @@ const Cart = require('../models/cartModel');
 const Order = require('../models/orderModel');
 const Card = require('../models/CardModel');
 const Address = require('../models/addressModel');
+const User = require('../models/userModel');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
   //get the cart id
@@ -70,5 +71,32 @@ exports.getOrders = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: carts
+  });
+});
+
+exports.getAllOrders = catchAsync(async (req, res, next) => {
+  // get all the orders
+  const orders = await Order.find();
+
+  //map through the orders get the user and cart and return it
+  const allOrders = await Promise.all(
+    orders.map(async order => {
+      const cart = await Cart.findById(order.cartId);
+      const user = await User.findById(order.userId);
+      return {
+        _id: order._id,
+        user: user,
+        cart: cart,
+        status: 'pending',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+    })
+  );
+
+  // return the orders
+  res.status(200).json({
+    status: 'success',
+    data: allOrders
   });
 });

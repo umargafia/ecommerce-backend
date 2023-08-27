@@ -11,4 +11,8 @@ router.use(authController.protect);
 router.post('/create', orderController.createOrder);
 router.get('/getOrders', orderController.getOrders);
 
+router.use(authController.restrictTo('admin'));
+
+router.get('/getAllOrders', orderController.getAllOrders);
+
 module.exports = router;
