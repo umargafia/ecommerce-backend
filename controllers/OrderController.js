@@ -60,7 +60,7 @@ exports.getOrders = catchAsync(async (req, res, next) => {
         _id: order._id,
         userId: order.userId,
         cartId: cart,
-        status: 'pending',
+        status: order.status,
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
@@ -75,34 +75,50 @@ exports.getOrders = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllOrders = catchAsync(async (req, res, next) => {
-  // get all the orders
-  const orders = await Order.find();
+  try {
+    // Get all the orders
+    const orders = await Order.find();
 
-  //map through the orders get the user and cart and return it
-  const allOrders = await Promise.all(
-    orders.map(async order => {
-      const cart = await Cart.findById(order.cartId);
-      const user = await User.findById(order.userId);
-      const address = await Address.findOne({ user: user._id });
-      return {
-        _id: order._id,
-        user,
-        cart,
-        address,
-        status: order.status,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt
-      };
-    })
-  );
+    // Map through the orders, fetch related data, and return
+    const allOrders = await Promise.all(
+      orders.map(async order => {
+        const [cart, user] = await Promise.all([
+          Cart.findById(order.cartId),
+          User.findById(order.userId)
+        ]);
 
-  // return the orders
-  res.status(200).json({
-    status: 'success',
-    data: allOrders
-  });
+        if (!cart || !user) {
+          // Handle the case where cart or user is not found
+          return null; // Skip this order in the final result
+        }
+
+        const address = await Address.findOne({ user: user._id });
+
+        return {
+          _id: order._id,
+          user,
+          cart,
+          address,
+          status: order.status,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt
+        };
+      })
+    );
+
+    // Filter out any null values from the result due to missing cart or user
+    const validOrders = allOrders.filter(order => order !== null);
+
+    // Return the valid orders
+    res.status(200).json({
+      status: 'success',
+      data: validOrders
+    });
+  } catch (error) {
+    // Handle any errors
+    next(error);
+  }
 });
-
 exports.updateOrder = catchAsync(async (req, res, next) => {
   const { id, status } = req.params;
 
